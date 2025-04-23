@@ -39,5 +39,16 @@ Tracker = "https://github.com/vicamo/cloud-builder/issues"
 [project.entry-points.console_scripts]
 cbd = "cbd.__main__:main"
 
+[project.optional-dependencies]
+dev = [
+    "black ~= 22.6.0",
+    "flake8 ~= 5.0.4",
+    "pre-commit ~= 2.20.0"
+]
+
 [tool.setuptools.dynamic]
 version = { attr = "cbd.__version__" }
+
+[tool.black]
+line-length = 100
+skip-string-normalization = 1
