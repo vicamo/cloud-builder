@@ -1,0 +1,93 @@
+---
+name: GitHub CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+defaults:
+  run:
+    shell: 'bash -Eeuo pipefail -x {0}'
+
+permissions:
+  contents: read
+
+jobs:
+  pyvers:
+    name: Enumerate supported Python versions
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.enumerator.outputs.versions }}
+      latest: ${{ steps.enumerator.outputs.latest }}
+    steps:
+      - id: enumerator
+        run: |
+          # TODO: https://raw.githubusercontent.com/actions/python-versions/refs/heads/main/versions-manifest.json
+          versions='[
+              {"python_version":"3.13","platform_version":"24.04"},
+              {"python_version":"3.12","platform_version":"24.04"},
+              {"python_version":"3.11","platform_version":"24.04"},
+              {"python_version":"3.10","platform_version":"24.04"},
+              {"python_version":"3.9","platform_version":"24.04"}
+          ]'
+          versions="$(echo "${versions}" | jq -r -c -M)"
+          echo "versions=${versions}" >> "$GITHUB_OUTPUT"
+
+          latest="$(echo "${versions}" | jq -r -c -M '.[0].python_version')"
+          echo "latest=${latest}" >> "$GITHUB_OUTPUT"
+
+  pep8:
+    name: Run linters
+    needs: pyvers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ needs.pyvers.outputs.latest }}
+      - name: Install dependencies
+        run: python -m pip install tox
+      - name: Run tox
+        run: tox -e pep8
+
+  build:
+    name: Build python package
+    needs: pyvers
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.pyvers.outputs.versions) }}
+    runs-on: ubuntu-${{ matrix.platform_version }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          # History maybe needed for documentation builds.
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install pypa/build
+        run: python -m pip install build --user
+      - name: Build binaries
+        run: python -m build --sdist --wheel --outdir dist/
+      - name: Upload source package
+        if: ${{ matrix.python_version == needs.pyvers.outputs.latest }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+          retention-days: 7
+      - name: Upload wheel package
+        if: ${{ matrix.python_version == needs.pyvers.outputs.latest }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: dist/*.whl
+          retention-days: 7
