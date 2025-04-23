@@ -1,0 +1,36 @@
+---
+name: Check version strings
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/release-please/.release-please-manifest.json'
+      - 'cbd/__init__.py'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/release-please/.release-please-manifest.json'
+      - 'cbd/__init__.py'
+
+permissions:
+  contents: read
+
+jobs:
+  check-version-strings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version strings
+        run: |
+          set -ex
+
+          rp_version="$(sed -n '/^ *"\."/s/^ *"\.": "\(.*\)"$/\1/p' \
+              .github/release-please/.release-please-manifest.json)"
+          py_version="$(sed -n '/^__version__ =/s/^.*"\(.*\)"$/\1/p' cbd/__init__.py)"
+          [ "${rp_version}" = "${py_version}" ] || exit 1
