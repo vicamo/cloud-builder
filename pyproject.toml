@@ -1,0 +1,43 @@
+[build-system]
+requires = [
+    "setuptools >= 77", # PEP-639, project.license format change
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloud-builder"
+authors = [
+    { name="You-Sheng Yang", email="vicamo@gmail.com" },
+]
+description = "Cloud BuilDer"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = [ "LICENSE" ]
+requires-python = ">= 3.9"
+dependencies = []
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Build Tools",
+]
+keywords = [
+    "cbd",
+]
+dynamic = [
+    "version",
+]
+
+[project.urls]
+Homepage = "https://github.com/vicamo/cloud-builder"
+Source = "https://github.com/vicamo/cloud-builder"
+Tracker = "https://github.com/vicamo/cloud-builder/issues"
+
+[project.entry-points.console_scripts]
+cbd = "cbd.__main__:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "cbd.__version__" }
